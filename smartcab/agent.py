@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.99):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -52,7 +52,7 @@ class LearningAgent(Agent):
             # Where k determines how fast the agent performs the transition between random learning and choosing the max q-value. k also determines how fast the sigmoid function converges to 0.
             # The t0 value was also chosen empirically; by using the sigmoid function, we can make sure that the agent would have sufficient time to explore the environment completely randomly, in order also to fill the Q-value matrix with the correct values.
             k = 0.5
-            t0 = 750
+            t0 = 500
             self.trial_count = self.trial_count + 1
             self.epsilon = 1 - (1/(1+math.exp(-k*self.alpha*(self.trial_count-t0))))
 
@@ -72,7 +72,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
-        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'])
+        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'] == 'forward')
         return state
 
 
@@ -85,8 +85,9 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        action_2_do = max(self.Q[state], key=self.Q[state].get)
-        maxQ = self.Q[state][action_2_do]
+        #max_key = max(self.Q[state], key=self.Q[state].get)
+        #max_key = max(self.Q[state].values())
+        maxQ = max(self.Q[state].values())
 
         return maxQ
 
@@ -122,7 +123,7 @@ class LearningAgent(Agent):
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
         if not self.learning:
-            action = self.valid_actions[random.randint(0, 3)]
+            action = random.choice(self.valid_actions)
         else:
             random_action = random.uniform(0, 1)
             if random.random() > self.epsilon:
@@ -189,7 +190,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, learning=False, epsilon=1, alpha=1)
+    agent = env.create_agent(LearningAgent, learning=True, epsilon=1, alpha=0.5)
     
     ##############
     # Follow the driving agent
@@ -206,14 +207,14 @@ def run():
     #   optimized    - set to True to change the default log file name
 #    sim = Simulator(env, display=True) 
 #    sim = Simulator(env, display=False, update_delay=0.01, log_metrics=True) 
-    sim = Simulator(env, display=True, update_delay=0.01, log_metrics=True, optimized=True)
+    sim = Simulator(env, display=False, update_delay=0.01, log_metrics=True, optimized=True)
     
     ##############
     # Run the simulator
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test=50, tolerance=0.05)
+    sim.run(n_test=1000, tolerance=0.01)
 
 
 if __name__ == '__main__':
